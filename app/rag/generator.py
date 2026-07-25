@@ -84,11 +84,7 @@ class Generator:
         }
     
     def _get_system_prompt(self) -> str:
-        """
-        System prompt that defines the AI's behavior.
-        
-        This is crucial for preventing hallucinations!
-        """
+       
         return """You are a helpful AI assistant for Knowlia, a knowledge base assistant.
 
 Your role:
@@ -102,7 +98,8 @@ Your role:
 Important:
 - Never hallucinate or invent information
 - Only use facts from the provided context
-- If uncertain, acknowledge it"""
+- If uncertain, acknowledge it
+- Do not add "(Source: ...)" or any links in the answer text"""
     
     def _build_context(self, chunks: List[Dict]) -> str:
         """

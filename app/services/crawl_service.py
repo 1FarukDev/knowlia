@@ -162,7 +162,17 @@ class CrawlService:
                 if current_domain != start_domain:
                     print(f"   ⏭️  Skipping (different domain): {current_domain}")
                     continue   
-            result = self.crawl_and_index_url(current_url)
+            try:
+                result = self.crawl_and_index_url(current_url)
+            except Exception as e:
+                print(f"   ❌ Failed: {str(e)}")
+                failed += 1
+                continue
+            if result is None:
+                print(f"   ❌ Failed: {result['message']}")
+                failed += 1
+                continue
+                
             if result['success']:
                 successful += 1
                 total_chunks += result['chunks_created']
