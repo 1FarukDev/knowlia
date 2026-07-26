@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import crawl, chat
 from app.core.config import settings
+from app.rag.vector_store import vector_store
+import uvicorn
 
 
 app = FastAPI(
@@ -54,7 +56,7 @@ async def startup_event():
     print(f"🤖 LLM Model: {settings.LLM_MODEL}")
     print(f"📦 Embedding Model: {settings.EMBEDDING_MODEL}")
     
-    from app.rag.vector_store import vector_store
+   
     chunk_count = vector_store.count()
     print(f"💾 Vector store: {chunk_count} chunks")
     
@@ -68,7 +70,6 @@ async def shutdown_event():
 
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",

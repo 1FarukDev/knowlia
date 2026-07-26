@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, HttpUrl
 from typing import List, Optional
 from app.services.crawl_service import crawl_service
-from typing import List, Optional
+from app.rag.vector_store import vector_store
 
 
 router = APIRouter(prefix="/crawl", tags=["Crawl"])
@@ -100,7 +100,7 @@ async def crawl_multiple_urls(request: CrawlMultipleRequest):
 @router.get("/stats")
 async def get_crawl_stats():
     
-    from app.rag.vector_store import vector_store
+   
     
     total_chunks = vector_store.count()
     
