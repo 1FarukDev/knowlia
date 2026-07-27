@@ -69,7 +69,7 @@ class CrawlService:
         print("3️⃣ Chunking text...")
         metadata = {
             'url': page_data['url'],
-            'title': page_data.get('title', 'Untitled')
+            'title': page_data.get('title') or 'Untitled'
         }
         
         chunks = chunking_service.chunk_text(clean_text, metadata)
