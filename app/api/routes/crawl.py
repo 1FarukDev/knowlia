@@ -100,8 +100,6 @@ async def crawl_multiple_urls(request: CrawlMultipleRequest):
 @router.get("/stats")
 async def get_crawl_stats():
     
-   
-    
     total_chunks = vector_store.count()
     
     return {
