@@ -15,8 +15,17 @@ class WebScraper:
         self.timeout = timeout
         
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (compatible; KnowliaBot/1.0; +https://knowlia.com)'
-        }
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'DNT': '1',
+    'Connection': 'keep-alive',
+    'Upgrade-Insecure-Requests': '1',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Cache-Control': 'max-age=0',
+}
     
     def fetch_page(self, url: str) -> Optional[Dict]:
         try:
@@ -95,20 +104,22 @@ class WebScraper:
             return False
     def extract_links(self, html: str, base_url: str) -> list:
         soup = BeautifulSoup(html, 'html.parser')
-        links = []
+        links = []  
+    
         for link_tag in soup.find_all('a', href=True):
             href = link_tag['href']
             absolute_url = urljoin(base_url, href)
             parsed_url = urlparse(absolute_url)
             clean_url = urlunparse((
-                                    parsed_url.scheme,
-                                    parsed_url.netloc,
-                                    parsed_url.path,
-                                    parsed_url.params,
-                                    parsed_url.query,
-                                    ''
-                                    ))
+                parsed_url.scheme,
+                parsed_url.netloc,
+                parsed_url.path,
+                parsed_url.params,
+                parsed_url.query,
+                ''
+            ))
             links.append(clean_url)
+        
         return links
     def get_domain(self, url: str) -> str:
     
