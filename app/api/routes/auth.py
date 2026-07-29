@@ -33,21 +33,18 @@ def get_db():
 @router.get("/login")
 async def login(request: Request):
     redirect_uri = config("REDIRECT_URI")
-    # redirect_uri = request.url_for("auth_callback")
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
 @router.get("/callback")
 async def auth_callback(request: Request, db: Session = Depends(get_db)):
-    # Get token from Google
     token = await oauth.google.authorize_access_token(request)
     user_info = await oauth.google.parse_id_token(request, token)
 
-    google_sub = user_info["sub"]   # matches your column
+    google_sub = user_info["sub"]   
     email = user_info["email"]
     name = user_info.get("name")
 
-    # 🔎 Check if user already exists by google_sub
     db_user = db.query(User).filter(User.google_sub == google_sub).first()
     print(db_user)
     if not db_user:
