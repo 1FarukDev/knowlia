@@ -23,12 +23,13 @@ class Retriever:
         """
         self.top_k = top_k or settings.TOP_K_RESULTS
     
-    def retrieve(self, question: str) -> List[Dict]:
+    def retrieve(self, question: str, top_k: int = None) -> List[Dict]:
         """
         Retrieve relevant chunks for a question.
         
         Args:
             question: User's question
+            top_k: Number of chunks to retrieve (optional, uses default if not provided)
         
         Returns:
             List of dictionaries with:
@@ -42,13 +43,16 @@ class Retriever:
             >>> print(results[0]['content'])
             "Our pricing starts at $99 per month..."
         """
+        # Use provided top_k or fall back to default
+        k = top_k if top_k is not None else self.top_k
+        
         # Step 1: Generate embedding for the question
         question_embedding = embedding_service.generate_embedding(question)
         
         # Step 2: Search vector store
         search_results = vector_store.search(
             query_embedding=question_embedding,
-            top_k=self.top_k
+            top_k=k
         )
         
         # Step 3: Format results

@@ -4,6 +4,7 @@ from app.rag.generator import generator
 from openai import OpenAI
 from app.core.config import settings
 from app.rag.prompts import RAGPrompts
+from app.rag.reranker import reranker
 
 
 class RAGService:
@@ -12,6 +13,30 @@ class RAGService:
     
     This is the main entry point for answering user questions.
     """
+    
+    def _rerank_if_enabled(self, query: str, chunks: List[Dict], top_k: int = 5) -> List[Dict]:
+        """
+        Rerank chunks if reranking is enabled, otherwise return top chunks.
+        
+        Args:
+            query: The query to use for reranking
+            chunks: Retrieved chunks from vector search
+            top_k: Number of top chunks to return
+        
+        Returns:
+            Reranked chunks or top-k chunks if reranking disabled
+        """
+        if reranker.enabled:
+            print("🔄 Reranking chunks...")
+            reranked_chunks = reranker.rerank(
+                query=query,
+                chunks=chunks,
+                top_k=top_k
+            )
+            print(f"   Top chunk score: {reranked_chunks[0].get('rerank_score', 0):.3f}")
+            return reranked_chunks
+        else:
+            return chunks[:top_k]
     
     def answer_question_with_history(
         self,
@@ -39,7 +64,7 @@ class RAGService:
         
         # Retrieve relevant chunks using contextualized question
         print("1️⃣ Retrieving relevant chunks...")
-        retrieved_chunks = retriever.retrieve(contextualized_question)
+        retrieved_chunks = retriever.retrieve(contextualized_question, top_k=10)
         
         if not retrieved_chunks:
             return {
@@ -52,9 +77,16 @@ class RAGService:
         
         print(f"   Retrieved {len(retrieved_chunks)} chunks")
         
-        # Generate answer using original question (not reformulated)
+        # Step 2: Rerank chunks for better relevance
+        reranked_chunks = self._rerank_if_enabled(
+            query=contextualized_question,
+            chunks=retrieved_chunks,
+            top_k=5
+        )
+        
+        # Step 3: Generate answer using original question (not reformulated)
         print("2️⃣ Generating answer with LLM...")
-        result = generator.generate_answer(question, retrieved_chunks)
+        result = generator.generate_answer(question, reranked_chunks)
         
         print(f"✅ Answer generated using {result['chunks_used']} chunks")
         
@@ -133,7 +165,7 @@ class RAGService:
         
         # Step 1: Retrieve relevant chunks
         print("1️⃣ Retrieving relevant chunks...")
-        retrieved_chunks = retriever.retrieve(question)
+        retrieved_chunks = retriever.retrieve(question, top_k=10)
         
         if not retrieved_chunks:
             return {
@@ -148,9 +180,16 @@ class RAGService:
         for i, chunk in enumerate(retrieved_chunks[:3], 1):  # Show top 3
             print(f"   [{i}] Score: {chunk['score']:.3f} | {chunk['content'][:60]}...")
         
-        # Step 2: Generate answer
+        # Step 2: Rerank chunks for better relevance
+        reranked_chunks = self._rerank_if_enabled(
+            query=question,
+            chunks=retrieved_chunks,
+            top_k=5
+        )
+        
+        # Step 3: Generate answer
         print("2️⃣ Generating answer with LLM...")
-        result = generator.generate_answer(question, retrieved_chunks)
+        result = generator.generate_answer(question, reranked_chunks)
         
         print(f"✅ Answer generated using {result['chunks_used']} chunks")
         

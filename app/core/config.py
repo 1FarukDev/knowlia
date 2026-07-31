@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     SECRET_KEY: Optional[str] = None
     REDIRECT_URI: Optional[str] = None
     
+    # Cohere API (for reranking)
+    COHERE_API_KEY: Optional[str] = None
+    USE_RERANKING: bool = True
+    RERANK_TOP_K: int = 5
+    
     # RAG Configuration - OpenAI Models
     EMBEDDING_MODEL: str = "text-embedding-3-small"
     LLM_MODEL: str = "gpt-4o-mini"
