@@ -419,7 +419,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Faruk Ajibade - [@farukdev_](https://twitter.com/farukdev_)
 
-Project Link: [https://github.com/1farukdev/knowlia](https://github.com/farukajibade/knowlia)
+Project Link: [https://github.com/1farukdev/knowlia](https://github.com/1FarukDev/knowlia)
 
 ---
 
