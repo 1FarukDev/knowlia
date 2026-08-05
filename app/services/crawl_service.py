@@ -6,6 +6,7 @@ from app.rag.chunking import chunking_service
 from app.rag.embeddings import embedding_service
 from app.rag.vector_store import vector_store
 import time
+from app.rag.bm25_search import bm25_search
 
 class CrawlService:
    
@@ -191,6 +192,15 @@ class CrawlService:
             
             if to_visit and successful < max_pages:
                 time.sleep(delay)
+        
+        # Build BM25 index from all stored chunks
+        all_chunks_data = vector_store.collection.get()
+        all_chunks = [
+            {'content': content, 'metadata': metadata}
+            for content, metadata in zip(all_chunks_data['documents'], all_chunks_data['metadatas'])
+        ]
+        bm25_search.build_index(all_chunks)
+        print(f"✅ BM25 index built with {len(all_chunks)} chunks")
         
         return {
             'start_url': start_url,
