@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     USE_RERANKING: bool = True
     RERANK_TOP_K: int = 5
     
+    # Hybrid search settings
+    USE_HYBRID_SEARCH: bool = True
+    VECTOR_WEIGHT: float = 0.5  # 0.5 = equal weight to vector and keyword
+    
     # RAG Configuration - OpenAI Models
     EMBEDDING_MODEL: str = "text-embedding-3-small"
     LLM_MODEL: str = "gpt-4o-mini"

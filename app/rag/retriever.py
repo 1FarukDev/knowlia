@@ -2,7 +2,7 @@ from typing import List, Dict
 from app.rag.embeddings import embedding_service
 from app.rag.vector_store import vector_store
 from app.core.config import settings
-
+from app.rag.bm25_search import bm25_search
 
 class Retriever:
     """
@@ -76,6 +76,55 @@ class Retriever:
             })
         
         return retrieved_chunks
+    
+    def hybrid_search(self, query: str, top_k: int = 5, vector_weight: float = 0.5) -> List[Dict]:
+        """
+        Hybrid search combining vector and keyword search.
+        
+        Args:
+            query: User's question
+            top_k: Number of final results
+            vector_weight: Weight for vector search (0-1). 
+                          (1 - vector_weight) used for BM25
+        
+        Returns:
+            Merged and scored chunks from both searches
+        """
+        # Get results from both searches
+        vector_results = self.retrieve(query, top_k=top_k * 2)
+        keyword_results = bm25_search.search(query, top_k=top_k * 2)
+        
+        # Normalize scores and combine
+        chunk_scores = {}
+        
+        # Add vector scores
+        for chunk in vector_results:
+            chunk_id = chunk["content"][:100]
+            chunk_scores[chunk_id] = {
+                "chunk": chunk,
+                "score": chunk.get("score", 0) * vector_weight
+            }
+        
+        # Add BM25 scores
+        keyword_weight = 1 - vector_weight
+        for chunk in keyword_results:
+            chunk_id = chunk["content"][:100]
+            if chunk_id in chunk_scores:
+                chunk_scores[chunk_id]["score"] += chunk.get("bm25_score", 0) * keyword_weight
+            else:
+                chunk_scores[chunk_id] = {
+                    "chunk": chunk,
+                    "score": chunk.get("bm25_score", 0) * keyword_weight
+                }
+        
+        # Sort by combined score and return top K
+        sorted_chunks = sorted(
+            chunk_scores.values(),
+            key=lambda x: x["score"],
+            reverse=True
+        )[:top_k]
+        
+        return [item["chunk"] for item in sorted_chunks]
     
     def retrieve_with_filter(
         self,

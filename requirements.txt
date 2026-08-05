@@ -35,3 +35,8 @@ html5lib==1.1
 
 # Optional
 redis==5.0.1
+
+# keyword search
+rank-bm25==0.2.2
+
+nltk==3.8.1

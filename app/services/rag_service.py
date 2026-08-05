@@ -64,7 +64,16 @@ class RAGService:
         
         # Retrieve relevant chunks using contextualized question
         print("1️⃣ Retrieving relevant chunks...")
-        retrieved_chunks = retriever.retrieve(contextualized_question, top_k=10)
+        # retrieved_chunks = retriever.retrieve(contextualized_question, top_k=10)
+        # Use hybrid search if enabled
+        if settings.USE_HYBRID_SEARCH:
+            retrieved_chunks = retriever.hybrid_search(
+            contextualized_question, 
+            top_k=10,
+            vector_weight=settings.VECTOR_WEIGHT
+                )
+        else:
+            retrieved_chunks = retriever.retrieve(contextualized_question, top_k=10)
         
         if not retrieved_chunks:
             return {
