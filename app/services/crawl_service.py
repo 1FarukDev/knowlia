@@ -1,5 +1,6 @@
 
 from typing import Dict, List
+from app.crawler.smart_scrapper import smart_scraper
 from app.crawler.scraper import web_scraper
 from app.crawler.cleaner import html_cleaner
 from app.rag.chunking import chunking_service
@@ -42,7 +43,7 @@ class CrawlService:
         
         # Step 1: Fetch the webpage
         print("1️⃣ Fetching webpage...")
-        page_data = web_scraper.fetch_page(url)
+        page_data = smart_scraper.fetch_page(url)
         
         if not page_data:
             return {
@@ -178,7 +179,7 @@ class CrawlService:
                 successful += 1
                 total_chunks += result['chunks_created']
                 
-                page_data = web_scraper.fetch_page(current_url)
+                page_data = smart_scraper.fetch_page(current_url)
                 if page_data:
                     links = web_scraper.extract_links(page_data['html'], current_url)
                     for link in links:
