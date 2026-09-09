@@ -1,5 +1,6 @@
 
 from typing import Dict, List
+from app.crawler.smart_scrapper import smart_scraper
 from app.crawler.scraper import web_scraper
 from app.crawler.cleaner import html_cleaner
 from app.rag.chunking import chunking_service
@@ -42,7 +43,7 @@ class CrawlService:
         
         # Step 1: Fetch the webpage
         print("1️⃣ Fetching webpage...")
-        page_data = web_scraper.fetch_page(url)
+        page_data = smart_scraper.fetch_page(url)
         
         if not page_data:
             return {
@@ -138,11 +139,24 @@ class CrawlService:
     def crawl_entire_site(
         self,
         start_url: str,
-        max_pages: int = 50,
+        max_pages: int = None,  # None = crawl all discovered pages
         same_domain_only: bool = True,
-        delay: float = 2.0
+        delay: float = 2.0,
+        safety_limit: int = 500  # Hard limit to prevent infinite crawls
     ) -> Dict:
-       
+        """
+        Crawl an entire website starting from a URL.
+        
+        Args:
+            start_url: The starting URL
+            max_pages: Optional max pages to crawl (None = unlimited up to safety_limit)
+            same_domain_only: Only crawl pages on the same domain
+            delay: Delay between page requests
+            safety_limit: Maximum pages to prevent runaway crawls
+        
+        Returns:
+            Dictionary with crawl statistics
+        """
        
         to_visit = [start_url]
         visited = set()
@@ -150,14 +164,20 @@ class CrawlService:
         failed = 0
         total_chunks = 0
         
+        # Determine actual max pages
+        actual_max = max_pages if max_pages is not None else safety_limit
+        
         start_domain = web_scraper.get_domain(start_url)
         
-        while to_visit and successful < max_pages:
+        print(f"\n🚀 Starting site crawl: {start_url}")
+        print(f"   Max pages: {'unlimited (up to ' + str(safety_limit) + ')' if max_pages is None else max_pages}")
+        
+        while to_visit and successful < actual_max:
             current_url = to_visit.pop(0)
             if current_url in visited:
                 continue
             visited.add(current_url)
-            print(f"\n[{successful + 1}/{max_pages}] Crawling: {current_url}")
+            print(f"\n[{successful + 1}/{actual_max}] Crawling: {current_url}")
             if same_domain_only:
                 current_domain = web_scraper.get_domain(current_url)
                 if current_domain != start_domain:
@@ -178,7 +198,7 @@ class CrawlService:
                 successful += 1
                 total_chunks += result['chunks_created']
                 
-                page_data = web_scraper.fetch_page(current_url)
+                page_data = smart_scraper.fetch_page(current_url)
                 if page_data:
                     links = web_scraper.extract_links(page_data['html'], current_url)
                     for link in links:
@@ -190,10 +210,11 @@ class CrawlService:
                 failed += 1
                 print(f"   ❌ Failed: {result['message']}")
             
-            if to_visit and successful < max_pages:
+            if to_visit and successful < actual_max:
                 time.sleep(delay)
         
         # Build BM25 index from all stored chunks
+        print("\n📚 Building BM25 keyword search index...")
         all_chunks_data = vector_store.collection.get()
         all_chunks = [
             {'content': content, 'metadata': metadata}
@@ -202,13 +223,26 @@ class CrawlService:
         bm25_search.build_index(all_chunks)
         print(f"✅ BM25 index built with {len(all_chunks)} chunks")
         
+        # Print crawl summary
+        print(f"\n✅ Crawl complete!")
+        print(f"   Pages crawled: {successful}")
+        print(f"   Pages failed: {failed}")
+        print(f"   Total chunks: {total_chunks}")
+        print(f"   URLs discovered: {len(visited) + len(to_visit)}")
+        if to_visit:
+            print(f"   ⚠️ Stopped at limit ({actual_max} pages). {len(to_visit)} URLs remaining uncrawled.")
+        else:
+            print(f"   ✨ All discovered pages crawled!")
+        
         return {
             'start_url': start_url,
             'pages_crawled': successful,
             'pages_failed': failed,
             'total_chunks': total_chunks,
             'urls_discovered': len(visited) + len(to_visit),
-            'urls_remaining': len(to_visit)
+            'urls_remaining': len(to_visit),
+            'max_pages_used': actual_max,
+            'stopped_at_limit': len(to_visit) > 0
         }
 
 

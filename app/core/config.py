@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     APP_NAME: str = "Knowlia"
     DEBUG: bool = False
     
+    # Playwright settings
+    USE_PLAYWRIGHT: bool = True  # Enable smart scraper with Playwright fallback
+    PLAYWRIGHT_HEADLESS: bool = True  # Run browser without UI
+    PLAYWRIGHT_TIMEOUT: int = 30000  # Page load timeout (ms)
+    
     class Config:
         env_file = ".env"
         case_sensitive = True

@@ -38,17 +38,19 @@ class CrawlMultipleRequest(BaseModel):
 
 class SiteCrawlRequest(BaseModel):
     url: HttpUrl
-    max_pages: Optional[int] = 50
+    max_pages: Optional[int] = None  # None = crawl all discovered pages
     same_domain_only: Optional[bool] = True
     delay: Optional[float] = 2.0
+    safety_limit: Optional[int] = 500  # Hard limit to prevent runaway crawls
     
     class Config:
         json_schema_extra = {
             "example": {
                 "url": "https://example.com",
-                "max_pages": 50,
+                "max_pages": None,  # Omit to crawl all pages (up to safety_limit)
                 "same_domain_only": True,
-                "delay": 2.0
+                "delay": 2.0,
+                "safety_limit": 500
             }
         }
 
@@ -109,7 +111,12 @@ async def get_crawl_stats():
     
 @router.post("/site")
 async def crawl_entire_site(request: SiteCrawlRequest):
-
+    """
+    Crawl an entire website starting from a URL.
+    
+    - max_pages: Optional limit (None = crawl all pages up to safety_limit)
+    - safety_limit: Maximum pages to prevent runaway crawls (default: 500)
+    """
     try:
         url_str = str(request.url)
         
@@ -117,7 +124,8 @@ async def crawl_entire_site(request: SiteCrawlRequest):
             start_url=url_str,
             max_pages=request.max_pages,
             same_domain_only=request.same_domain_only,
-            delay=request.delay
+            delay=request.delay,
+            safety_limit=request.safety_limit
         )
         
         return result
